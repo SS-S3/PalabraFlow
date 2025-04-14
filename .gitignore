@@ -1,0 +1,9 @@
+# Node dependencies
+node_modules/
+
+# macOS system file
+.DS_Store
+
+# Add other things to ignore if needed (e.g., build output, env files)
+# build/
+# .env
