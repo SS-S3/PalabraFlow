@@ -4,7 +4,6 @@ from flask_cors import CORS
 import nltk
 import os
 
-# Download required NLTK resources
 try:
     nltk.download('punkt_tab', quiet=True)
 except:
@@ -13,23 +12,26 @@ except:
 app = Flask(__name__)
 CORS(app)
 
-# Initialize model
 print("Loading EasyNMT model...")
 model = EasyNMT('opus-mt')
 print("Model loaded successfully!")
 
-# Add root route to fix "Cannot GET /" error
+# ADD THIS ROOT ROUTE
 @app.route('/', methods=['GET'])
 def home():
     return jsonify({
         'message': 'PalabraFlow Translation Service',
         'status': 'running',
-        'version': '1.0.0',
+        'model': 'EasyNMT opus-mt',
         'endpoints': {
             'health': '/health',
             'translate': '/translate (POST)'
         }
     })
+
+@app.route('/health', methods=['GET'])
+def health():
+    return jsonify({'status': 'OK', 'service': 'EasyNMT Translation'})
 
 @app.route('/translate', methods=['POST'])
 def translate():
@@ -45,12 +47,7 @@ def translate():
         translated = model.translate(text, source_lang=source, target_lang=target)
         return jsonify({'translatedText': translated})
     except Exception as e:
-        print(f"Translation error: {str(e)}")
         return jsonify({'error': 'Translation failed', 'details': str(e)}), 500
-
-@app.route('/health', methods=['GET'])
-def health():
-    return jsonify({'status': 'OK', 'service': 'EasyNMT Translation'})
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5001))
