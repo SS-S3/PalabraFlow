@@ -2,13 +2,21 @@ from flask import Flask, request, jsonify
 from easynmt import EasyNMT
 from flask_cors import CORS
 import nltk
+import os
 
 # Download required NLTK resources
-nltk.download('punkt_tab')
-app = Flask(__name__)
-CORS(app)  # Allow CORS if calling from a Node.js frontend/backend
+try:
+    nltk.download('punkt_tab', quiet=True)
+except:
+    pass
 
-model = EasyNMT('opus-mt')  # or 'm2m_100_418M', 'mbart50_m2m'
+app = Flask(__name__)
+CORS(app)
+
+# Initialize model (this might take time on first run)
+print("Loading EasyNMT model...")
+model = EasyNMT('opus-mt')
+print("Model loaded successfully!")
 
 @app.route('/translate', methods=['POST'])
 def translate():
@@ -24,7 +32,13 @@ def translate():
         translated = model.translate(text, source_lang=source, target_lang=target)
         return jsonify({'translatedText': translated})
     except Exception as e:
+        print(f"Translation error: {str(e)}")
         return jsonify({'error': 'Translation failed', 'details': str(e)}), 500
 
+@app.route('/health', methods=['GET'])
+def health():
+    return jsonify({'status': 'OK', 'service': 'EasyNMT Translation'})
+
 if __name__ == '__main__':
-    app.run(port=5001)  # Change port if needed
+    port = int(os.environ.get('PORT', 5001))
+    app.run(host='0.0.0.0', port=port, debug=False)
