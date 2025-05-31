@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/PalabraFlow/static/css/main.7f0d27c1.css",
+    "main.js": "/PalabraFlow/static/js/main.856c6386.js",
+    "static/js/453.262015f1.chunk.js": "/PalabraFlow/static/js/453.262015f1.chunk.js",
+    "index.html": "/PalabraFlow/index.html",
+    "main.7f0d27c1.css.map": "/PalabraFlow/static/css/main.7f0d27c1.css.map",
+    "main.856c6386.js.map": "/PalabraFlow/static/js/main.856c6386.js.map",
+    "453.262015f1.chunk.js.map": "/PalabraFlow/static/js/453.262015f1.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.7f0d27c1.css",
+    "static/js/main.856c6386.js"
+  ]
+}
