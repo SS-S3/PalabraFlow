@@ -13,10 +13,23 @@ except:
 app = Flask(__name__)
 CORS(app)
 
-# Initialize model (this might take time on first run)
+# Initialize model
 print("Loading EasyNMT model...")
 model = EasyNMT('opus-mt')
 print("Model loaded successfully!")
+
+# Add root route to fix "Cannot GET /" error
+@app.route('/', methods=['GET'])
+def home():
+    return jsonify({
+        'message': 'PalabraFlow Translation Service',
+        'status': 'running',
+        'version': '1.0.0',
+        'endpoints': {
+            'health': '/health',
+            'translate': '/translate (POST)'
+        }
+    })
 
 @app.route('/translate', methods=['POST'])
 def translate():
