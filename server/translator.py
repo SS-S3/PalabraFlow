@@ -37,14 +37,12 @@ def health():
 def translate():
     data = request.json
     text = data.get('text')
-    source = data.get('sourceLanguage')
-    target = data.get('targetLanguage')
 
     if not text or not source or not target:
         return jsonify({'error': 'Missing parameters'}), 400
 
     try:
-        translated = model.translate(text, source_lang=source, target_lang=target)
+        translated = model.translate(text, source_lang="en", target_lang="es")
         return jsonify({'translatedText': translated})
     except Exception as e:
         return jsonify({'error': 'Translation failed', 'details': str(e)}), 500
