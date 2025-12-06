@@ -1,15 +1,15 @@
 {
   "files": {
     "main.css": "/PalabraFlow/static/css/main.c939ba9b.css",
-    "main.js": "/PalabraFlow/static/js/main.83ec7d72.js",
+    "main.js": "/PalabraFlow/static/js/main.52067c83.js",
     "static/js/453.262015f1.chunk.js": "/PalabraFlow/static/js/453.262015f1.chunk.js",
     "index.html": "/PalabraFlow/index.html",
     "main.c939ba9b.css.map": "/PalabraFlow/static/css/main.c939ba9b.css.map",
-    "main.83ec7d72.js.map": "/PalabraFlow/static/js/main.83ec7d72.js.map",
+    "main.52067c83.js.map": "/PalabraFlow/static/js/main.52067c83.js.map",
     "453.262015f1.chunk.js.map": "/PalabraFlow/static/js/453.262015f1.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.c939ba9b.css",
-    "static/js/main.83ec7d72.js"
+    "static/js/main.52067c83.js"
   ]
 }
