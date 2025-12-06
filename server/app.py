@@ -2,11 +2,16 @@
 PalabraFlow - Combined Node.js and Python Translation Service
 This file combines both the Express server and Flask translation service
 for deployment on platforms like Render.
-Uses tiny models with lazy loading for minimal memory usage.
+Uses tiny models with lazy loading and memory optimization.
 """
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import os
+import gc
+
+# Set memory-efficient environment variables
+os.environ['TOKENIZERS_PARALLELISM'] = 'false'
+os.environ['OMP_NUM_THREADS'] = '1'
 
 app = Flask(__name__, static_folder='../client/build', static_url_path='')
 CORS(app)
@@ -20,6 +25,7 @@ model_cache = {
 def get_model(direction):
     """Lazy load specific tiny model only when needed"""
     global model_cache
+    import torch
     from transformers import MarianMTModel, MarianTokenizer
     
     if model_cache[direction] is None:
@@ -30,10 +36,14 @@ def get_model(direction):
         else:  # es-en
             model_name = 'Helsinki-NLP/opus-mt-tc-big-es-en'
         
+        # Force CPU and float32 for memory efficiency
         model_cache[direction] = {
-            'model': MarianMTModel.from_pretrained(model_name),
+            'model': MarianMTModel.from_pretrained(model_name, torch_dtype=torch.float32),
             'tokenizer': MarianTokenizer.from_pretrained(model_name)
         }
+        
+        # Clear memory
+        gc.collect()
         print(f"Tiny model loaded: {model_name}")
     
     return model_cache[direction]
