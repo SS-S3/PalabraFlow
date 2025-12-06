@@ -2,24 +2,41 @@
 PalabraFlow - Combined Node.js and Python Translation Service
 This file combines both the Express server and Flask translation service
 for deployment on platforms like Render.
+Uses a lightweight Helsinki-NLP model for lower memory usage.
 """
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
-from easynmt import EasyNMT
-import nltk
+from transformers import MarianMTModel, MarianTokenizer
 import os
-
-try:
-    nltk.download('punkt_tab', quiet=True)
-except:
-    pass
 
 app = Flask(__name__, static_folder='../client/build', static_url_path='')
 CORS(app)
 
-print("Loading EasyNMT model...")
-model = EasyNMT('opus-mt')
-print("Model loaded successfully!")
+print("Loading translation models...")
+# Load lightweight models for both directions
+model_en_es = MarianMTModel.from_pretrained('Helsinki-NLP/opus-mt-en-es')
+tokenizer_en_es = MarianTokenizer.from_pretrained('Helsinki-NLP/opus-mt-en-es')
+
+model_es_en = MarianMTModel.from_pretrained('Helsinki-NLP/opus-mt-es-en')
+tokenizer_es_en = MarianTokenizer.from_pretrained('Helsinki-NLP/opus-mt-es-en')
+print("Models loaded successfully!")
+
+def translate_text(text, source_lang, target_lang):
+    """Translate text using the appropriate model"""
+    if source_lang == 'en' and target_lang == 'es':
+        model = model_en_es
+        tokenizer = tokenizer_en_es
+    elif source_lang == 'es' and target_lang == 'en':
+        model = model_es_en
+        tokenizer = tokenizer_es_en
+    else:
+        raise ValueError(f"Unsupported language pair: {source_lang} -> {target_lang}")
+    
+    # Tokenize and translate
+    inputs = tokenizer(text, return_tensors="pt", padding=True, truncation=True, max_length=512)
+    translated = model.generate(**inputs)
+    result = tokenizer.decode(translated[0], skip_special_tokens=True)
+    return result
 
 # Health check endpoint
 @app.route('/api/health', methods=['GET'])
@@ -27,7 +44,7 @@ def health():
     return jsonify({
         'status': 'OK',
         'service': 'PalabraFlow Full-Stack',
-        'model': 'EasyNMT opus-mt'
+        'model': 'Helsinki-NLP/opus-mt (lightweight)'
     })
 
 # Translation endpoint
@@ -42,7 +59,7 @@ def translate():
         return jsonify({'error': 'Missing text parameter'}), 400
 
     try:
-        translated = model.translate(text, source_lang=source, target_lang=target)
+        translated = translate_text(text, source, target)
         return jsonify({'translatedText': translated})
     except Exception as e:
         return jsonify({'error': 'Translation failed', 'details': str(e)}), 500

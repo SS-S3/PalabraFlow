@@ -1,7 +1,6 @@
-flask==2.3.3
-flask-cors==4.0.0
-easynmt==2.0.2
-nltk==3.8.1
+flask==3.0.3
+flask-cors==5.0.1
+transformers==4.35.0
 torch==2.0.1
-transformers==4.33.2
 sentencepiece==0.1.99
+protobuf==3.20.3
