@@ -24,7 +24,7 @@ def home():
         'model': 'EasyNMT opus-mt',
         'endpoints': {
             'health': '/health',
-            'translate': '/translate (POST)'
+            'translate': '/api/translate (POST)'
         }
     })
 
@@ -32,7 +32,16 @@ def home():
 def health():
     return jsonify({'status': 'OK', 'service': 'EasyNMT Translation'})
 
+@app.route('/api/health', methods=['GET'])
+def api_health():
+    return jsonify({'status': 'OK', 'service': 'EasyNMT Translation'})
+
 @app.route('/translate', methods=['POST'])
+def translate_legacy():
+    """Legacy endpoint for backward compatibility"""
+    return translate()
+
+@app.route('/api/translate', methods=['POST'])
 def translate():
     data = request.json
     text = data.get('text')

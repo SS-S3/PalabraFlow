@@ -12,7 +12,8 @@ app.use(express.json());
 // Serve React build files
 app.use(express.static(path.join(__dirname, '../client/build')));
 
-// Translation service URL (your Python service)
+// Translation service URL (your Python/Flask service)
+// NOTE: Flask exposes the translate endpoint at /api/translate
 const TRANSLATE_SERVICE_URL = process.env.TRANSLATE_SERVICE_URL || 'https://palabraflow.onrender.com';
 
 // API Routes
@@ -20,7 +21,7 @@ app.post('/api/translate', async (req, res) => {
     const { text, sourceLanguage, targetLanguage } = req.body;
 
     try {
-        const response = await fetch(`${TRANSLATE_SERVICE_URL}/translate`, {
+        const response = await fetch(`${TRANSLATE_SERVICE_URL}/api/translate`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ text, sourceLanguage, targetLanguage })
