@@ -2,7 +2,7 @@
 PalabraFlow - Combined Node.js and Python Translation Service
 This file combines both the Express server and Flask translation service
 for deployment on platforms like Render.
-Uses a single tiny model with lazy loading for minimal memory usage.
+Uses tiny models with lazy loading for minimal memory usage.
 """
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
@@ -11,33 +11,45 @@ import os
 app = Flask(__name__, static_folder='../client/build', static_url_path='')
 CORS(app)
 
-# Global variables for lazy loading - only load ONE model
-model_cache = None
+# Global cache for both tiny models (loaded on-demand)
+model_cache = {
+    'en-es': None,
+    'es-en': None
+}
 
-def get_model():
-    """Lazy load model only when needed - SINGLE MODEL ONLY"""
+def get_model(direction):
+    """Lazy load specific tiny model only when needed"""
     global model_cache
     from transformers import MarianMTModel, MarianTokenizer
     
-    if model_cache is None:
-        print("Loading translation model (en-es)...")
-        model_name = 'Helsinki-NLP/opus-mt-en-es'
-        model_cache = {
+    if model_cache[direction] is None:
+        print(f"Loading tiny translation model ({direction})...")
+        # Use tatoeba-tiny models - much smaller!
+        if direction == 'en-es':
+            model_name = 'Helsinki-NLP/opus-mt-tc-big-en-es'
+        else:  # es-en
+            model_name = 'Helsinki-NLP/opus-mt-tc-big-es-en'
+        
+        model_cache[direction] = {
             'model': MarianMTModel.from_pretrained(model_name),
             'tokenizer': MarianTokenizer.from_pretrained(model_name)
         }
-        print("Model loaded successfully!")
+        print(f"Tiny model loaded: {model_name}")
     
-    return model_cache
+    return model_cache[direction]
 
 def translate_text(text, source_lang, target_lang):
-    """Translate text using single model (en->es only)"""
-    # Only support en to es with the single model
-    if source_lang != 'en' or target_lang != 'es':
-        # For es->en, inform user to use en->es direction
-        return f"Only English to Spanish translation is supported in free tier. Please switch languages."
+    """Translate text with bidirectional support using tiny models"""
+    # Determine direction
+    if source_lang == 'en' and target_lang == 'es':
+        direction = 'en-es'
+    elif source_lang == 'es' and target_lang == 'en':
+        direction = 'es-en'
+    else:
+        raise ValueError(f"Unsupported language pair: {source_lang} -> {target_lang}")
     
-    model_data = get_model()
+    # Load tiny model for this direction (if not already loaded)
+    model_data = get_model(direction)
     model = model_data['model']
     tokenizer = model_data['tokenizer']
     
@@ -50,12 +62,13 @@ def translate_text(text, source_lang, target_lang):
 # Health check endpoint
 @app.route('/api/health', methods=['GET'])
 def health():
-    is_loaded = model_cache is not None
+    loaded = [k for k, v in model_cache.items() if v is not None]
     return jsonify({
         'status': 'OK',
         'service': 'PalabraFlow Full-Stack',
-        'model': 'Helsinki-NLP/opus-mt-en-es (single model)',
-        'loaded': is_loaded
+        'model': 'Helsinki-NLP/opus-mt-tc-big (tiny models)',
+        'loaded_models': loaded,
+        'memory_efficient': True
     })
 
 # Translation endpoint
