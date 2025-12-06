@@ -2,49 +2,56 @@
 PalabraFlow - Combined Node.js and Python Translation Service
 This file combines both the Express server and Flask translation service
 for deployment on platforms like Render.
-Uses a lightweight Helsinki-NLP model for lower memory usage.
+Uses tiny models with lazy loading for minimal memory usage.
 """
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
-from transformers import MarianMTModel, MarianTokenizer
 import os
 
 app = Flask(__name__, static_folder='../client/build', static_url_path='')
 CORS(app)
 
-print("Loading translation models...")
-# Load lightweight models for both directions
-model_en_es = MarianMTModel.from_pretrained('Helsinki-NLP/opus-mt-en-es')
-tokenizer_en_es = MarianTokenizer.from_pretrained('Helsinki-NLP/opus-mt-en-es')
+# Global variables for lazy loading
+models = {}
 
-model_es_en = MarianMTModel.from_pretrained('Helsinki-NLP/opus-mt-es-en')
-tokenizer_es_en = MarianTokenizer.from_pretrained('Helsinki-NLP/opus-mt-es-en')
-print("Models loaded successfully!")
+def get_model(source_lang, target_lang):
+    """Lazy load model only when needed to save memory"""
+    from transformers import MarianMTModel, MarianTokenizer
+    
+    model_key = f"{source_lang}-{target_lang}"
+    
+    if model_key not in models:
+        print(f"Loading model for {source_lang} -> {target_lang}...")
+        model_name = f'Helsinki-NLP/opus-mt-{source_lang}-{target_lang}'
+        models[model_key] = {
+            'model': MarianMTModel.from_pretrained(model_name),
+            'tokenizer': MarianTokenizer.from_pretrained(model_name)
+        }
+        print(f"Model loaded: {model_name}")
+    
+    return models[model_key]
 
 def translate_text(text, source_lang, target_lang):
-    """Translate text using the appropriate model"""
-    if source_lang == 'en' and target_lang == 'es':
-        model = model_en_es
-        tokenizer = tokenizer_en_es
-    elif source_lang == 'es' and target_lang == 'en':
-        model = model_es_en
-        tokenizer = tokenizer_es_en
-    else:
-        raise ValueError(f"Unsupported language pair: {source_lang} -> {target_lang}")
+    """Translate text using lazy-loaded model"""
+    model_data = get_model(source_lang, target_lang)
+    model = model_data['model']
+    tokenizer = model_data['tokenizer']
     
     # Tokenize and translate
     inputs = tokenizer(text, return_tensors="pt", padding=True, truncation=True, max_length=512)
-    translated = model.generate(**inputs)
+    translated = model.generate(**inputs, max_length=512)
     result = tokenizer.decode(translated[0], skip_special_tokens=True)
     return result
 
 # Health check endpoint
 @app.route('/api/health', methods=['GET'])
 def health():
+    loaded_models = list(models.keys()) if models else []
     return jsonify({
         'status': 'OK',
         'service': 'PalabraFlow Full-Stack',
-        'model': 'Helsinki-NLP/opus-mt (lightweight)'
+        'model': 'Helsinki-NLP/opus-mt (lazy-loaded)',
+        'loaded': loaded_models
     })
 
 # Translation endpoint
