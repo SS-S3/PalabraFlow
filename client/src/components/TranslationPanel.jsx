@@ -8,6 +8,9 @@ const languageOptions = [
 
 const getTargetLanguage = (source) => (source === 'en' ? 'es' : 'en');
 
+// API URL - uses environment variable in production, proxy in development
+const API_URL = process.env.REACT_APP_API_URL || '';
+
 const TranslationPanel = () => {
   const [inputText, setInputText] = useState('');
   const [outputText, setOutputText] = useState('');
@@ -20,7 +23,7 @@ const TranslationPanel = () => {
     setError('');
     setOutputText('');
     try {
-      const response = await fetch('/api/translate', {
+      const response = await fetch(`${API_URL}/api/translate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
