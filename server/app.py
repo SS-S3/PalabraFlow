@@ -21,15 +21,6 @@ print("Loading EasyNMT model...")
 model = EasyNMT('opus-mt')
 print("Model loaded successfully!")
 
-# Serve React App
-@app.route('/', defaults={'path': ''})
-@app.route('/<path:path>')
-def serve(path):
-    if path != "" and os.path.exists(app.static_folder + '/' + path):
-        return send_from_directory(app.static_folder, path)
-    else:
-        return send_from_directory(app.static_folder, 'index.html')
-
 # Health check endpoint
 @app.route('/api/health', methods=['GET'])
 def health():
@@ -55,6 +46,15 @@ def translate():
         return jsonify({'translatedText': translated})
     except Exception as e:
         return jsonify({'error': 'Translation failed', 'details': str(e)}), 500
+
+# Serve React App (must be last)
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def serve(path):
+    if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
+        return send_from_directory(app.static_folder, path)
+    else:
+        return send_from_directory(app.static_folder, 'index.html')
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 10000))
