@@ -2,7 +2,7 @@
 PalabraFlow - Combined Node.js and Python Translation Service
 This file combines both the Express server and Flask translation service
 for deployment on platforms like Render.
-Uses tiny models with lazy loading for minimal memory usage.
+Uses a single tiny model with lazy loading for minimal memory usage.
 """
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
@@ -11,29 +11,33 @@ import os
 app = Flask(__name__, static_folder='../client/build', static_url_path='')
 CORS(app)
 
-# Global variables for lazy loading
-models = {}
+# Global variables for lazy loading - only load ONE model
+model_cache = None
 
-def get_model(source_lang, target_lang):
-    """Lazy load model only when needed to save memory"""
+def get_model():
+    """Lazy load model only when needed - SINGLE MODEL ONLY"""
+    global model_cache
     from transformers import MarianMTModel, MarianTokenizer
     
-    model_key = f"{source_lang}-{target_lang}"
-    
-    if model_key not in models:
-        print(f"Loading model for {source_lang} -> {target_lang}...")
-        model_name = f'Helsinki-NLP/opus-mt-{source_lang}-{target_lang}'
-        models[model_key] = {
+    if model_cache is None:
+        print("Loading translation model (en-es)...")
+        model_name = 'Helsinki-NLP/opus-mt-en-es'
+        model_cache = {
             'model': MarianMTModel.from_pretrained(model_name),
             'tokenizer': MarianTokenizer.from_pretrained(model_name)
         }
-        print(f"Model loaded: {model_name}")
+        print("Model loaded successfully!")
     
-    return models[model_key]
+    return model_cache
 
 def translate_text(text, source_lang, target_lang):
-    """Translate text using lazy-loaded model"""
-    model_data = get_model(source_lang, target_lang)
+    """Translate text using single model (en->es only)"""
+    # Only support en to es with the single model
+    if source_lang != 'en' or target_lang != 'es':
+        # For es->en, inform user to use en->es direction
+        return f"Only English to Spanish translation is supported in free tier. Please switch languages."
+    
+    model_data = get_model()
     model = model_data['model']
     tokenizer = model_data['tokenizer']
     
@@ -46,12 +50,12 @@ def translate_text(text, source_lang, target_lang):
 # Health check endpoint
 @app.route('/api/health', methods=['GET'])
 def health():
-    loaded_models = list(models.keys()) if models else []
+    is_loaded = model_cache is not None
     return jsonify({
         'status': 'OK',
         'service': 'PalabraFlow Full-Stack',
-        'model': 'Helsinki-NLP/opus-mt (lazy-loaded)',
-        'loaded': loaded_models
+        'model': 'Helsinki-NLP/opus-mt-en-es (single model)',
+        'loaded': is_loaded
     })
 
 # Translation endpoint
