@@ -20,7 +20,7 @@ const TranslationPanel = () => {
     setError('');
     setOutputText('');
     try {
-      const response = await fetch('http://localhost:5000/api/translate', {
+      const response = await fetch('/api/translate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

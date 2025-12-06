@@ -2,7 +2,8 @@
   "name": "palabraflow",
   "version": "0.1.0",
   "private": true,
-  "proxy": "http://localhost:5000",
+  "homepage": "https://ss-s3.github.io/PalabraFlow",
+  "proxy": "http://localhost:5001",
   "dependencies": {
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",

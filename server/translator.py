@@ -16,7 +16,6 @@ print("Loading EasyNMT model...")
 model = EasyNMT('opus-mt')
 print("Model loaded successfully!")
 
-# ADD THIS ROOT ROUTE
 @app.route('/', methods=['GET'])
 def home():
     return jsonify({
@@ -37,16 +36,18 @@ def health():
 def translate():
     data = request.json
     text = data.get('text')
+    source = data.get('sourceLanguage', 'en')
+    target = data.get('targetLanguage', 'es')
 
-    if not text or not source or not target:
-        return jsonify({'error': 'Missing parameters'}), 400
+    if not text:
+        return jsonify({'error': 'Missing text parameter'}), 400
 
     try:
-        translated = model.translate(text, source_lang="en", target_lang="es")
+        translated = model.translate(text, source_lang=source, target_lang=target)
         return jsonify({'translatedText': translated})
     except Exception as e:
         return jsonify({'error': 'Translation failed', 'details': str(e)}), 500
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5001))
+    port = int(os.environ.get('PORT', 5002))
     app.run(host='0.0.0.0', port=port, debug=False)
