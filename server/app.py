@@ -25,7 +25,6 @@ model_cache = {
 def get_model(direction):
     """Lazy load specific tiny model only when needed"""
     global model_cache
-    import torch
     from transformers import MarianMTModel, MarianTokenizer
     
     if model_cache[direction] is None:
@@ -36,9 +35,9 @@ def get_model(direction):
         else:  # es-en
             model_name = 'Helsinki-NLP/opus-mt-tc-big-es-en'
         
-        # Force CPU and float32 for memory efficiency
+        # Load model without torch dtype specification
         model_cache[direction] = {
-            'model': MarianMTModel.from_pretrained(model_name, torch_dtype=torch.float32),
+            'model': MarianMTModel.from_pretrained(model_name),
             'tokenizer': MarianTokenizer.from_pretrained(model_name)
         }
         
@@ -84,18 +83,23 @@ def health():
 # Translation endpoint
 @app.route('/api/translate', methods=['POST'])
 def translate():
-    data = request.json
-    text = data.get('text')
-    source = data.get('sourceLanguage', 'en')
-    target = data.get('targetLanguage', 'es')
-
-    if not text:
-        return jsonify({'error': 'Missing text parameter'}), 400
-
     try:
+        data = request.json
+        text = data.get('text')
+        source = data.get('sourceLanguage', 'en')
+        target = data.get('targetLanguage', 'es')
+
+        if not text:
+            return jsonify({'error': 'Missing text parameter'}), 400
+
+        print(f"Translating: '{text}' from {source} to {target}")
         translated = translate_text(text, source, target)
+        print(f"Translation result: '{translated}'")
         return jsonify({'translatedText': translated})
     except Exception as e:
+        import traceback
+        error_trace = traceback.format_exc()
+        print(f"Translation error: {error_trace}")
         return jsonify({'error': 'Translation failed', 'details': str(e)}), 500
 
 # Serve React App (must be last)
