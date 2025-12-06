@@ -3,3 +3,4 @@ flask-cors==5.0.1
 transformers==4.35.0
 sentencepiece==0.1.99
 torch==2.0.0
+numpy<2.0.0

@@ -13,7 +13,10 @@ import gc
 os.environ['TOKENIZERS_PARALLELISM'] = 'false'
 os.environ['OMP_NUM_THREADS'] = '1'
 
-app = Flask(__name__, static_folder='../client/build', static_url_path='')
+# Resolve client build path absolutely to avoid 404s when cwd differs
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+CLIENT_BUILD = os.path.normpath(os.path.join(BASE_DIR, '..', 'client', 'build'))
+app = Flask(__name__, static_folder=CLIENT_BUILD, static_url_path='')
 CORS(app)
 
 # Global cache for both tiny models (loaded on-demand)
