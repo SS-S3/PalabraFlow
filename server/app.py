@@ -17,7 +17,20 @@ os.environ['OMP_NUM_THREADS'] = '1'
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 CLIENT_BUILD = os.path.normpath(os.path.join(BASE_DIR, '..', 'client', 'build'))
 app = Flask(__name__, static_folder=CLIENT_BUILD, static_url_path='')
-CORS(app)
+
+# FIXED: Configure CORS to allow your GitHub Pages domain
+CORS(app, resources={
+    r"/api/*": {
+        "origins": [
+            "https://ss-s3.github.io",
+            "http://localhost:3000",
+            "http://localhost:5000"
+        ],
+        "methods": ["GET", "POST", "OPTIONS"],
+        "allow_headers": ["Content-Type"],
+        "supports_credentials": True
+    }
+})
 
 # Global cache for both tiny models (loaded on-demand)
 model_cache = {
@@ -72,8 +85,10 @@ def translate_text(text, source_lang, target_lang):
     return result
 
 # Health check endpoint
-@app.route('/api/health', methods=['GET'])
+@app.route('/api/health', methods=['GET', 'OPTIONS'])
 def health():
+    if request.method == 'OPTIONS':
+        return '', 204
     loaded = [k for k, v in model_cache.items() if v is not None]
     return jsonify({
         'status': 'OK',
@@ -84,8 +99,12 @@ def health():
     })
 
 # Translation endpoint
-@app.route('/api/translate', methods=['POST'])
+@app.route('/api/translate', methods=['POST', 'OPTIONS'])
 def translate():
+    # Handle preflight OPTIONS request
+    if request.method == 'OPTIONS':
+        return '', 204
+        
     try:
         data = request.json
         text = data.get('text')
